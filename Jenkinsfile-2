@@ -4,13 +4,26 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '5'))
     }
     stages {
-        stage('Build'){
-            steps{
+        stage('Prepare') {
+            steps {
+                // Làm cho script mvnw có thể thực thi
+                sh 'chmod +x mvnw'
+                
+                // Xây dựng dự án bằng Maven
+                sh './mvnw clean package'
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                // Xây dựng Docker image
                 sh 'docker build -t datuits/userservice-lab:latest .'
             }
         }
-        stage('Scan'){
-            steps{
+        
+        stage('Scan') {
+            steps {
+                // Quét bảo mật Docker image bằng Trivy
                 sh 'trivy datuits/userservice-lab:latest'
             }
         }
