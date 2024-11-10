@@ -6,7 +6,7 @@ pipeline {
     stages {
         stage('Build'){
             steps{
-                sh 'docker build -t datuits/UserService-lab:latest .'
+                sh 'docker build -t datuits/userservice-lab:latest .'
             }
         }
         stage('Scan'){
