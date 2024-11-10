@@ -4,14 +4,6 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '5'))
     }
     stages {
-        stage('Install Trivy') {
-            steps {
-                // Cài đặt Trivy nếu chưa có
-                sh 'curl -sSL https://github.com/aquasecurity/trivy/releases/download/v0.57.0/trivy_0.57.0_Linux-64bit.deb -o trivy.deb'
-                sh 'sudo dpkg -i trivy.deb'
-            }
-        }
-        
         stage('Prepare') {
             steps {
                 // Làm cho script mvnw có thể thực thi
@@ -31,8 +23,8 @@ pipeline {
         
         stage('Scan') {
             steps {
-                // Quét bảo mật Docker image cơ bản
-                sh 'trivy image datuits/userservice-lab:latest'
+                // Quét bảo mật Docker image bằng Trivy (sử dụng Docker container để chạy Trivy)
+                sh 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image datuits/userservice-lab:latest'
             }
         }
     }
