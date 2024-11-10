@@ -23,8 +23,8 @@ pipeline {
         
         stage('Scan') {
             steps {
-                // Sử dụng Docker image của Trivy để quét bảo mật với từ khóa "image"
-                sh 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image datuits/userservice-lab:latest'
+                // Quét bảo mật Docker image cơ bản
+                sh 'trivy image datuits/userservice-lab:latest'
             }
         }
     }
