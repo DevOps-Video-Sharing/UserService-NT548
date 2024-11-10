@@ -11,7 +11,7 @@ pipeline {
         }
         stage('Scan'){
             steps{
-                sh 'trivy datuits/UserService-lab:latest'
+                sh 'trivy datuits/userservice-lab:latest'
             }
         }
     }
