@@ -1,0 +1,20 @@
+pipeline {
+    agent { 
+        label any
+    }
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '5'))
+    }
+    stages {
+        stage('Build'){
+            steps{
+                sh 'docker build -t datuits/UserService-lab:latest .'
+            }
+        }
+        stage('Scan'){
+            steps{
+                sh 'trivy datuits/UserService-lab:latest'
+            }
+        }
+    }
+}
