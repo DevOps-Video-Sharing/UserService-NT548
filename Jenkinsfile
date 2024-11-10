@@ -39,26 +39,17 @@
 
 pipeline {
     agent { 
-        docker { 
-            image 'maven:3.9.9-eclipse-temurin-21-alpine' 
-        } 
+        label 'linux'
+    }
+    option{
+        buildDiscarder(logRotator(numToKeepStr: '5'))
     }
     stages {
-        stage('Check Maven Version') {
-            steps {
-                sh 'mvn --version'
-            }
-        }
-        
-        stage('Build') {
-            steps {
-                sh 'mvn clean install'
-            }
-        }
-        
-        stage('Test') {
-            steps {
-                sh 'mvn test'
+        stage('Scan'){
+            steps{
+                withSonarQubeEnv('sonarqube') {
+                    sh './mvnw clean org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.0.2155:sonar'
+                }
             }
         }
     }
