@@ -4,6 +4,14 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '5'))
     }
     stages {
+        stage('Install Trivy') {
+            steps {
+                // Cài đặt Trivy nếu chưa có
+                sh 'curl -sSL https://github.com/aquasecurity/trivy/releases/download/v0.57.0/trivy_0.57.0_Linux-64bit.deb -o trivy.deb'
+                sh 'sudo dpkg -i trivy.deb'
+            }
+        }
+        
         stage('Prepare') {
             steps {
                 // Làm cho script mvnw có thể thực thi
