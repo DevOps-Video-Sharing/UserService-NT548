@@ -23,8 +23,8 @@ pipeline {
         
         stage('Scan') {
             steps {
-                // Quét bảo mật Docker image bằng Trivy (sử dụng Docker container để chạy Trivy)
-                sh 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image datuits/userservice-lab:latest'
+                // Dọn dẹp Java DB cache trước khi quét
+                sh 'docker run --rm aquasec/trivy image --timeout 5m datuits/userservice-lab:latest || (trivy clean --java-db && docker run --rm aquasec/trivy image --timeout 5m datuits/userservice-lab:latest)'
             }
         }
     }
