@@ -1,0 +1,76 @@
+pipeline {
+    agent any
+
+    environment {
+        TRIVY_VERSION = '0.40.0'
+        TRIVY_DEB_URL = "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb"
+    }
+
+    stages {
+        stage('Install Trivy') {
+            steps {
+                script {
+                    // Update system and install wget
+                    sh 'sudo apt-get update'
+                    sh 'sudo apt-get install -y wget'
+                    
+                    // Download and install Trivy
+                    sh "wget ${TRIVY_DEB_URL}"
+                    sh "sudo dpkg -i trivy_${TRIVY_VERSION}_Linux-64bit.deb"
+                }
+            }
+        }
+
+        stage('Scan Docker Image with Trivy') {
+            steps {
+                script {
+                    // Run Trivy scan on the Docker image
+                    sh 'trivy image --format json --output scan-results.json datuits/devops-user-service:latest'
+                }
+            }
+        }
+
+        stage('Extract High and Critical Vulnerabilities') {
+            steps {
+                script {
+                    // Extract high and critical vulnerabilities and generate a markdown report
+                    sh '''
+                    jq -r '
+                    def hr(severity):
+                        if severity == "HIGH" or severity == "CRITICAL" then true else false end;
+                    def to_md:
+                        "| " + (.VulnerabilityID // "") + " | " + (.PkgName // "") + " | " + (.InstalledVersion // "") + " | " + (.Severity // "") + " | " + (.Title // "") + " |";
+                    [
+                        "# Docker Image Scan Results",
+                        "",
+                        "## High and Critical Vulnerabilities",
+                        "",
+                        "| Vulnerability ID | Package | Version | Severity | Description |",
+                        "|------------------|---------|---------|----------|-------------|",
+                        (.Results[] | .Vulnerabilities[] | select(hr(.Severity)) | to_md),
+                        ""
+                    ] | join("\\n")
+                    ' scan-results.json > vulnerability-report.md
+                    '''
+                }
+            }
+        }
+
+        stage('Upload Vulnerability Report') {
+            steps {
+                script {
+                    // Save the vulnerability report as an artifact
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'vulnerability-report.md', onlyIfSuccessful: true
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Clean up any downloaded files
+            cleanWs()
+        }
+    }
+}
+
