@@ -2,6 +2,23 @@ pipeline {
     agent any
 
     stages {
+
+           steps {
+                 //Làm cho script mvnw có thể thực thi
+                sh 'chmod +x mvnw'
+
+                 //Xây dựng dự án bằng Maven
+                sh './mvnw clean package'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                // Xây dựng Docker image
+                sh 'docker build -t datuits/userservice-lab:latest .'
+            }
+        }
+
         stage('Security Scan') {
             steps {
                 script {
