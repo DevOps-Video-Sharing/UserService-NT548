@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     stages {
-
+	stage('Prepare')
            steps {
                  //Làm cho script mvnw có thể thực thi
                 sh 'chmod +x mvnw'
@@ -23,7 +23,7 @@ pipeline {
             steps {
                 script {
                     // Run Trivy scan and redirect the output to a file in the workspace
-                    sh 'trivy -q -f json datuits/devops-user-service:latest > $WORKSPACE/trivy-report.json'
+                    sh 'trivy -q -f json datuits/userservice-lab:latest > $WORKSPACE/trivy-report.json'
                     
                     // Optionally read the JSON report and process it
                     def trivyReport = readFile('$WORKSPACE/trivy-report.json')
