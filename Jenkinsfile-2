@@ -20,11 +20,23 @@ pipeline {
                 sh 'docker build -t datuits/userservice-lab:latest .'
             }
         }
+
+	stage('Install trivy'){
+	    steps{
+	        sh 'sudo apt-get update'
+
+		sh 'sudo apt-get install -y wget'
+
+		sh 'wget https://github.com/aquasecurity/trivy/releases/download/v0.40.0/trivy_0.40.0_Linux-64bit.deb'
+
+		sh 'sudo dpkg -i trivy_0.40.0_Linux-64bit.deb'
+	    }
+	}
         
         stage('Scan'){
 	    steps {
-		sh 'trivy --no-progress --exit-code 1 --severity LOW'
-	}
+		sh 'trivy image --format json --output scan-results.json datuits/userservice-lab:latest'
+	    }
 	}
     }
 }
