@@ -2,14 +2,17 @@ pipeline {
     agent any
 
     stages {
-
         stage('Security Scan') {
             steps {
                 script {
+                    // Run Trivy scan and capture the output
                     def trivyScan = sh(script: 'trivy -q -f json --output /var/lib/jenkins/reports/trivy-report.json datuits/devops-user-service:latest', returnStdout: true).trim()
+                    
+                    // Write the output to a markdown file (trivyScan.md)
                     writeFile file: 'trivyScan.md', text: trivyScan
                 }
             }
         }
     }
 }
+
