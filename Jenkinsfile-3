@@ -5,10 +5,13 @@ pipeline {
         stage('Security Scan') {
             steps {
                 script {
+                    // Ensure the directory exists before running Trivy
+                    sh 'mkdir -p /var/lib/jenkins/reports'
+                    
                     // Run Trivy scan and redirect the output to a file
                     sh 'trivy -q -f json datuits/devops-user-service:latest > /var/lib/jenkins/reports/trivy-report.json'
                     
-                    // Optionally read the JSON report and process it, for example writing to a markdown file
+                    // Optionally read the JSON report and process it
                     def trivyReport = readFile('/var/lib/jenkins/reports/trivy-report.json')
                     writeFile file: 'trivyScan.md', text: trivyReport
                 }
