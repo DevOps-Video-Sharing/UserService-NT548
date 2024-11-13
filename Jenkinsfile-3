@@ -2,19 +2,19 @@ pipeline {
     agent any
 
     stages {
-	stage('Prepare')
-           steps {
-                 //Làm cho script mvnw có thể thực thi
+        stage('Prepare') {
+            steps {
+                // Make the mvnw script executable
                 sh 'chmod +x mvnw'
 
-                 //Xây dựng dự án bằng Maven
+                // Build the project with Maven
                 sh './mvnw clean package'
             }
         }
 
         stage('Build') {
             steps {
-                // Xây dựng Docker image
+                // Build Docker image
                 sh 'docker build -t datuits/userservice-lab:latest .'
             }
         }
@@ -23,10 +23,10 @@ pipeline {
             steps {
                 script {
                     // Run Trivy scan and redirect the output to a file in the workspace
-                    sh 'trivy -q -f json datuits/userservice-lab:latest > $WORKSPACE/trivy-report.json'
-                    
+                    sh "trivy -q -f json datuits/userservice-lab:latest > ${WORKSPACE}/trivy-report.json"
+
                     // Optionally read the JSON report and process it
-                    def trivyReport = readFile('$WORKSPACE/trivy-report.json')
+                    def trivyReport = readFile("${WORKSPACE}/trivy-report.json")
                     writeFile file: 'trivyScan.md', text: trivyReport
                 }
             }
