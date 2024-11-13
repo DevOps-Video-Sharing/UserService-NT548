@@ -1,0 +1,90 @@
+pipeline {
+    agent any
+
+    environment {
+        TRIVY_VERSION = '0.40.0'
+        TRIVY_DEB_URL = "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb"
+        TRIVY_DB_PATH = "${WORKSPACE}/trivy-db"  // Custom path for local DB storage
+    }
+
+    stages {
+        stage('Install Trivy') {
+            steps {
+                script {
+                    // Update system and install wget
+                    sh 'apt-get update'
+                    sh 'apt-get install -y wget'
+
+                    // Install the latest version of Trivy
+                    sh "wget ${TRIVY_DEB_URL}"
+                    sh "dpkg -i trivy_${TRIVY_VERSION}_Linux-64bit.deb"
+                }
+            }
+        }
+
+        stage('Download Trivy Database') {
+            steps {
+                script {
+                    // Manually download the Trivy vulnerability database to avoid rate limits
+                    // You can adjust the download URL if you need a different database (e.g., Java DB)
+                    sh '''
+                    wget https://github.com/aquasecurity/trivy-db/releases/download/v0.40.0/trivy-db.tar.gz
+                    tar -xvzf trivy-db.tar.gz -C ${WORKSPACE}/trivy-db
+                    '''
+                }
+            }
+        }
+
+        stage('Scan Docker Image with Trivy') {
+            steps {
+                script {
+                    // Run Trivy scan on the Docker image, pointing to the local database path
+                    sh "trivy image --db-path ${WORKSPACE}/trivy-db --format json --output scan-results.json datuits/devops-user-service:latest"
+                }
+            }
+        }
+
+        stage('Extract High and Critical Vulnerabilities') {
+            steps {
+                script {
+                    // Use jq to filter out high and critical vulnerabilities and generate markdown report
+                    sh '''
+                    jq -r '
+                    def hr(severity):
+                        if severity == "HIGH" or severity == "CRITICAL" then true else false end;
+                    def to_md:
+                        "| " + (.VulnerabilityID // "") + " | " + (.PkgName // "") + " | " + (.InstalledVersion // "") + " | " + (.Severity // "") + " | " + (.Title // "") + " |";
+                    [
+                        "# Docker Image Scan Results",
+                        "",
+                        "## High and Critical Vulnerabilities",
+                        "",
+                        "| Vulnerability ID | Package | Version | Severity | Description |",
+                        "|------------------|---------|---------|----------|-------------|",
+                        (.Results[] | .Vulnerabilities[] | select(hr(.Severity)) | to_md),
+                        ""
+                    ] | join("\\n")
+                    ' scan-results.json > vulnerability-report.md
+                    '''
+                }
+            }
+        }
+
+        stage('Upload Vulnerability Report') {
+            steps {
+                script {
+                    // Upload the vulnerability report as an artifact for future reference
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'vulnerability-report.md', onlyIfSuccessful: true
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Clean up the workspace after the pipeline run
+            cleanWs()
+        }
+    }
+}
+
