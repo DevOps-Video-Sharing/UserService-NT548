@@ -21,11 +21,10 @@ pipeline {
             }
         }
         
-        stage('Scan') {
-            steps {
-                // Dọn dẹp Java DB cache trước khi quét
-                sh 'docker run --rm aquasec/trivy image --timeout 5m datuits/userservice-lab:latest || (trivy clean --java-db && docker run --rm aquasec/trivy image --timeout 5m datuits/userservice-lab:latest)'
-            }
-        }
+        stage('Scan'){
+	    steps {
+		sh 'trivy --no-progress --exit-code 1 --severity LOW'
+	}
+	}
     }
 }
