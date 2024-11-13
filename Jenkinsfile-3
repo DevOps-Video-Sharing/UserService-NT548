@@ -2,11 +2,6 @@ pipeline {
     agent any
 
     stages {
-        stage('Build') {
-            steps {
-                // Your build stage here
-            }
-        }
 
         stage('Security Scan') {
             steps {
