@@ -4,34 +4,34 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '5'))
     }
     stages {
-        stage('Prepare') {
-            steps {
+//        stage('Prepare') {
+//            steps {
                 // Làm cho script mvnw có thể thực thi
-                sh 'chmod +x mvnw'
+//                sh 'chmod +x mvnw'
                 
                 // Xây dựng dự án bằng Maven
-                sh './mvnw clean package'
-            }
-        }
+ //               sh './mvnw clean package'
+   //         }
+     //   }
         
-        stage('Build') {
-            steps {
+       // stage('Build') {
+         //   steps {
                 // Xây dựng Docker image
-                sh 'docker build -t datuits/userservice-lab:latest .'
-            }
-        }
+           //     sh 'docker build -t datuits/userservice-lab:latest .'
+           // }
+        //}
 
-	stage('Install trivy'){
-	    steps{
-	        sh 'apt-get update'
-
-		sh 'apt-get install -y wget'
-
-		sh 'wget https://github.com/aquasecurity/trivy/releases/download/v0.40.0/trivy_0.40.0_Linux-64bit.deb'
-
-		sh 'dpkg -i trivy_0.40.0_Linux-64bit.deb'
-	    }
-	}
+//	stage('Install trivy'){
+//	    steps{
+//	        sh 'apt-get update'
+//
+//		sh 'apt-get install -y wget'
+//
+//		sh 'wget https://github.com/aquasecurity/trivy/releases/download/v0.40.0/trivy_0.40.0_Linux-64bit.deb'
+//
+//		sh 'dpkg -i trivy_0.40.0_Linux-64bit.deb'
+//	    }
+//	}
         
         stage('Scan'){
 	    steps {
