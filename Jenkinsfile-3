@@ -6,7 +6,7 @@ pipeline {
         stage('Security Scan') {
             steps {
                 script {
-                    def trivyScan = sh(script: 'trivy -q -f json -o /var/lib/jenkins/reports/trivy-report.json datuits/devops-user-service:latest', returnStdout: true).trim()
+                    def trivyScan = sh(script: 'trivy -q -f json --output /var/lib/jenkins/reports/trivy-report.json datuits/devops-user-service:latest', returnStdout: true).trim()
                     writeFile file: 'trivyScan.md', text: trivyScan
                 }
             }
