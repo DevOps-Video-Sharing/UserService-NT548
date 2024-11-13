@@ -22,6 +22,9 @@ pipeline {
         stage('Security Scan') {
             steps {
                 script {
+                    // Download the Trivy database to avoid hitting rate limits
+                    sh 'trivy --download-db-only'
+
                     // Run Trivy scan on the Docker image
                     sh "trivy image -q -f json datuits/userservice-lab:latest > ${WORKSPACE}/trivy-report.json"
 
