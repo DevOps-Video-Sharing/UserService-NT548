@@ -5,11 +5,12 @@ pipeline {
         stage('Security Scan') {
             steps {
                 script {
-                    // Run Trivy scan and capture the output
-                    def trivyScan = sh(script: 'trivy -q -f json --output /var/lib/jenkins/reports/trivy-report.json datuits/devops-user-service:latest', returnStdout: true).trim()
+                    // Run Trivy scan and redirect the output to a file
+                    sh 'trivy -q -f json datuits/devops-user-service:latest > /var/lib/jenkins/reports/trivy-report.json'
                     
-                    // Write the output to a markdown file (trivyScan.md)
-                    writeFile file: 'trivyScan.md', text: trivyScan
+                    // Optionally read the JSON report and process it, for example writing to a markdown file
+                    def trivyReport = readFile('/var/lib/jenkins/reports/trivy-report.json')
+                    writeFile file: 'trivyScan.md', text: trivyReport
                 }
             }
         }
