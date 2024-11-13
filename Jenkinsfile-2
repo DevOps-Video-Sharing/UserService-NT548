@@ -21,21 +21,21 @@ pipeline {
            // }
         //}
 
-//	stage('Install trivy'){
-//	    steps{
-//	        sh 'apt-get update'
-//
-//		sh 'apt-get install -y wget'
-//
-//		sh 'wget https://github.com/aquasecurity/trivy/releases/download/v0.40.0/trivy_0.40.0_Linux-64bit.deb'
-//
-//		sh 'dpkg -i trivy_0.40.0_Linux-64bit.deb'
-//	    }
-//	}
+	stage('Install trivy'){
+	    steps{
+	        sh 'apt-get update'
+
+		sh 'apt-get install -y wget'
+
+		sh 'wget https://github.com/aquasecurity/trivy/releases/download/v0.40.0/trivy_0.40.0_Linux-64bit.deb'
+
+		sh 'dpkg -i trivy_0.40.0_Linux-64bit.deb'
+	    }
+	}
         
         stage('Scan'){
 	    steps {
-		sh 'trivy image --format json --output scan-results.json datuits/userservice-lab:latest'
+		sh 'trivy image --format json --output scan-results.json datuits/devops-user-service:latest'
 	    }
 	}
     }
