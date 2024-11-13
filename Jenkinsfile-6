@@ -1,0 +1,87 @@
+pipeline {
+    agent any
+
+    environment {
+        TRIVY_VERSION = '0.40.0'
+        TRIVY_DEB_URL = "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb"
+        TRIVY_DB_PATH = "${WORKSPACE}/trivy-db"  // You can change this path to a custom location for local DB storage
+    }
+
+    stages {
+        stage('Install Trivy') {
+            steps {
+                script {
+                    // Update system and install wget (assuming root access, no sudo)
+                    sh 'apt-get update'
+                    sh 'apt-get install -y wget'
+                    
+                    // Download and install Trivy
+                    sh "wget ${TRIVY_DEB_URL}"
+                    sh "dpkg -i trivy_${TRIVY_VERSION}_Linux-64bit.deb"
+                }
+            }
+        }
+
+        stage('Download Trivy Database (optional)') {
+            steps {
+                script {
+                    // Download the Trivy vulnerability database separately to avoid hitting rate limits during the scan
+                    // If this is not supported in your version of Trivy, skip this step
+                    sh 'trivy --download-db-only'
+                }
+            }
+        }
+
+        stage('Scan Docker Image with Trivy') {
+            steps {
+                script {
+                    // Run Trivy scan on the Docker image, pointing to a local database path if necessary
+                    sh 'trivy image --db-path ${TRIVY_DB_PATH} --format json --output scan-results.json datuits/devops-user-service:latest'
+                }
+            }
+        }
+
+        stage('Extract High and Critical Vulnerabilities') {
+            steps {
+                script {
+                    // Extract high and critical vulnerabilities and generate a markdown report
+                    sh '''
+                    jq -r '
+                    def hr(severity):
+                        if severity == "HIGH" or severity == "CRITICAL" then true else false end;
+                    def to_md:
+                        "| " + (.VulnerabilityID // "") + " | " + (.PkgName // "") + " | " + (.InstalledVersion // "") + " | " + (.Severity // "") + " | " + (.Title // "") + " |";
+                    [
+                        "# Docker Image Scan Results",
+                        "",
+                        "## High and Critical Vulnerabilities",
+                        "",
+                        "| Vulnerability ID | Package | Version | Severity | Description |",
+                        "|------------------|---------|---------|----------|-------------|",
+                        (.Results[] | .Vulnerabilities[] | select(hr(.Severity)) | to_md),
+                        ""
+                    ] | join("\\n")
+                    ' scan-results.json > vulnerability-report.md
+                    '''
+                }
+            }
+        }
+
+        stage('Upload Vulnerability Report') {
+            steps {
+                script {
+                    // Save the vulnerability report as an artifact
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'vulnerability-report.md', onlyIfSuccessful: true
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Clean up any downloaded files and temporary data
+            cleanWs()
+        }
+    }
+}
+
